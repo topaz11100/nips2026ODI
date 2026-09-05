@@ -1,0 +1,22 @@
+train_regularization_off:
+  datasets:
+    - s-mnist
+    - shd
+    - cifar-10_16
+    - dvs128-gesture
+    - cifar-100_16
+    - cifar10-dvs
+  epochs: 50
+  checkpoint_epochs:
+    - 1
+    - 5
+    - 10
+    - 50
+  learning_rate: 0.0025
+  batch_size:
+    s-mnist: 256
+    shd: 128
+    cifar-10_16: 256
+    dvs128-gesture: 16
+    cifar-100_16: 256
+    cifar10-dvs: 16

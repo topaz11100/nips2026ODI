@@ -1,0 +1,14 @@
+lambda_calibration:
+  artifact_root: paper_artifacts
+  output_csv: paper_artifacts/lambda_calibration.csv
+  batch_size:
+    s-mnist: 256
+    shd: 128
+    cifar-10_16: 256
+    dvs128-gesture: 16
+    cifar-100_16: 256
+    cifar10-dvs: 16
+  target_ratio: 0.1
+  gpu_ids: [0, 1]
+  memory_fraction: 0.9
+  compile_threads: 4

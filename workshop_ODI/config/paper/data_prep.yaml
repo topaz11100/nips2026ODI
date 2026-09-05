@@ -1,0 +1,22 @@
+data_prep:
+  datasets:
+    - s-mnist
+    - shd
+    - cifar-10_16
+    - dvs128-gesture
+    - cifar-100_16
+    - cifar10-dvs
+  train_probe_size:
+    s-mnist: 160
+    shd: 320
+    cifar-10_16: 160
+    dvs128-gesture: 176
+    cifar-100_16: 1600
+    cifar10-dvs: 160
+  test_probe_size:
+    s-mnist: 160
+    shd: 320
+    cifar-10_16: 160
+    dvs128-gesture: 176
+    cifar-100_16: 1600
+    cifar10-dvs: 160
