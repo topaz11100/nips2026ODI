@@ -28,8 +28,6 @@ from workshop_jax.config import (
 
 
 PROJECT_ROOT = Path(__file__).resolve().parents[2]
-DATA_PREP_CONFIG_PATH = PROJECT_ROOT / "config/paper/data_prep.yaml"
-DATASET_SIGNAL_CONFIG_PATH = PROJECT_ROOT / "config/paper/dataset_signal_analysis.yaml"
 
 
 def _initialize(run_config_path: Path) -> None:
@@ -40,11 +38,8 @@ def _initialize(run_config_path: Path) -> None:
 
 
 def _validate_train_signal_inputs(root: Path, seed: int) -> None:
-    data_config = load_feature_config(DATA_PREP_CONFIG_PATH, "data_prep")
-    signal_config = load_feature_config(
-        DATASET_SIGNAL_CONFIG_PATH,
-        "dataset_signal_analysis",
-    )
+    data_config = load_feature_config("data_prep")
+    signal_config = load_feature_config("dataset_signal_analysis")
     if not isinstance(data_config, DataPrepConfig) or not isinstance(
         signal_config, AnalysisConfig
     ):
@@ -97,8 +92,8 @@ def _reuse(
     print(seed)
 
 
-def _list_datasets(config_path: Path, feature: str) -> None:
-    config = load_feature_config(config_path, feature)
+def _list_datasets(feature: str) -> None:
+    config = load_feature_config(feature)
     for dataset in config.datasets:
         print(dataset)
 
@@ -133,7 +128,7 @@ def _artifact_root(value: str) -> Path:
 
 
 def _run_feature(arguments: argparse.Namespace) -> Path | None:
-    config = load_feature_config(arguments.config, arguments.feature)
+    config = load_feature_config(arguments.feature)
     root = _artifact_root(arguments.artifact_root)
     seed = int(arguments.seed)
     phase = arguments.phase
@@ -228,7 +223,6 @@ def main() -> None:
     )
     parser.add_argument("--run-config", type=Path)
     parser.add_argument("--feature")
-    parser.add_argument("--config", type=Path)
     parser.add_argument("--artifact-root")
     parser.add_argument("--seed", type=int)
     parser.add_argument("--dataset")
@@ -246,13 +240,12 @@ def main() -> None:
             _reuse(arguments.run_config, arguments.reset_feature)
             return
         if arguments.phase == "list":
-            if arguments.config is None or arguments.feature is None:
-                raise ConfigError("list requires --feature and --config")
-            _list_datasets(arguments.config, arguments.feature)
+            if arguments.feature is None:
+                raise ConfigError("list requires --feature")
+            _list_datasets(arguments.feature)
             return
         required = {
             "feature": arguments.feature,
-            "config": arguments.config,
             "artifact_root": arguments.artifact_root,
             "seed": arguments.seed,
         }

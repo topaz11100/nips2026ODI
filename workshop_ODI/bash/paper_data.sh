@@ -14,11 +14,6 @@ GPU_IDS_RAW="${WORKSHOP_ODI_GPU_IDS:-0 1}"
 read -r -a GPU_IDS <<< "${GPU_IDS_RAW}"
 
 RUN_CONFIG="${PROJECT_ROOT}/config/paper/run.yaml"
-DATA_PREP_CONFIG="${PROJECT_ROOT}/config/paper/data_prep.yaml"
-DATASET_SIGNAL_CONFIG="${PROJECT_ROOT}/config/paper/dataset_signal_analysis.yaml"
-TRAIN_OFF_CONFIG="${PROJECT_ROOT}/config/paper/train_regularization_off.yaml"
-TRAIN_ON_CONFIG="${PROJECT_ROOT}/config/paper/train_regularization_on.yaml"
-SIGNAL_CONFIG="${PROJECT_ROOT}/config/paper/signal_analysis_regularization_off.yaml"
 
 if (( ${#GPU_IDS[@]} == 0 )); then
   printf 'WORKSHOP_ODI_GPU_IDS must contain at least one GPU\n' >&2
@@ -95,13 +90,11 @@ declare -a STAGE_DATASETS=()
 
 _load_datasets() {
   local feature="$1"
-  local config="$2"
   local output
   if ! output="$(
     CUDA_VISIBLE_DEVICES="" _engine \
       --phase list \
       --feature "${feature}" \
-      --config "${config}" \
       2>&1
   )"; then
     printf '%s\n' "${output}" >"${LOG_DIR}/list_${feature}.log"
@@ -142,14 +135,12 @@ _wait_for_gpu() {
 _run_gpu() {
   local gpu_id="$1"
   local feature="$2"
-  local config="$3"
-  local dataset="$4"
+  local dataset="$3"
   local cache_path="${CACHE_ROOT}/physical_gpu_${gpu_id}"
   local -a command=(
     "${PYTHON_BIN}" -m workshop_jax.engine
     --phase execute
     --feature "${feature}"
-    --config "${config}"
     --artifact-root "${ARTIFACT_ROOT}"
     --seed "${SEED}"
     --dataset "${dataset}"
@@ -176,8 +167,7 @@ _run_gpu() {
 _run_queue() {
   local gpu_id="$1"
   local feature="$2"
-  local config="$3"
-  shift 3
+  shift 2
   local -a datasets=("$@")
   local status=0
   local log_path dataset
@@ -188,7 +178,6 @@ _run_queue() {
     if ! _run_gpu \
       "${gpu_id}" \
       "${feature}" \
-      "${config}" \
       "${dataset}" \
       >"${log_path}" 2>&1; then
       status=1
@@ -201,8 +190,7 @@ _run_queue() {
 
 _run_pool() {
   local feature="$1"
-  local config="$2"
-  shift 2
+  shift
   local status=0
   local slot index pid dataset
   local -a datasets=("$@")
@@ -236,9 +224,9 @@ _run_pool() {
         return 2
       fi
     done
-    _run_queue "0" "${feature}" "${config}" "${gpu_zero_order[@]}" &
+    _run_queue "0" "${feature}" "${gpu_zero_order[@]}" &
     pids+=("$!")
-    _run_queue "1" "${feature}" "${config}" "${gpu_one_order[@]}" &
+    _run_queue "1" "${feature}" "${gpu_one_order[@]}" &
     pids+=("$!")
   else
     for slot in "${!GPU_IDS[@]}"; do
@@ -249,7 +237,6 @@ _run_pool() {
       _run_queue \
         "${GPU_IDS[slot]}" \
         "${feature}" \
-        "${config}" \
         "${assigned[@]}" &
       pids+=("$!")
     done
@@ -276,19 +263,16 @@ paper_data_main() {
     execute_data_prep \
     --phase execute \
     --feature data_prep \
-    --config "${DATA_PREP_CONFIG}" \
     --artifact-root "${ARTIFACT_ROOT}" \
     --seed "${SEED}"
-  _load_datasets dataset_signal_analysis "${DATASET_SIGNAL_CONFIG}"
+  _load_datasets dataset_signal_analysis
   _run_pool \
     dataset_signal_analysis \
-    "${DATASET_SIGNAL_CONFIG}" \
     "${STAGE_DATASETS[@]}"
   _run_cpu_logged \
     finalize_dataset_signal_analysis \
     --phase finalize \
     --feature dataset_signal_analysis \
-    --config "${DATASET_SIGNAL_CONFIG}" \
     --artifact-root "${ARTIFACT_ROOT}" \
     --seed "${SEED}"
   _print_result

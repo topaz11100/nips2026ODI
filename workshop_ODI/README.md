@@ -29,8 +29,8 @@ Download and extract the following files into the corresponding directories:
 | --- | --- | --- |
 | `s-mnist` | MLP | [MNIST, CVDF mirror](https://github.com/cvdfoundation/mnist): put the four IDX files in `mnist/`; both original filenames and filenames ending in `.gz` are accepted |
 | `shd` | MLP | [Spiking Heidelberg Digits](https://zenkelab.org/resources/spiking-heidelberg-datasets-shd/): extract the SHD training and test downloads into `shd/` as `shd_train.h5` and `shd_test.h5` |
-| `cifar-10_16` | VGG11 | [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html): extract `cifar-10-python.tar.gz` into `cifar-10/`, keeping the `cifar-10-batches-py/` directory |
-| `dvs128-gesture` | VGG11 | [IBM DvsGesture dataset](https://ibm.biz/EventCameraData): extract the complete archive into `dvs128-gesture/`, keeping `DvsGesture/` and its trial lists, AEDAT recordings, and label CSV files |
+| `cifar-10_16` | VGG | [CIFAR-10](https://www.cs.toronto.edu/~kriz/cifar.html): extract `cifar-10-python.tar.gz` into `cifar-10/`, keeping the `cifar-10-batches-py/` directory |
+| `dvs128-gesture` | VGG | [IBM DvsGesture dataset](https://ibm.biz/EventCameraData): extract the complete archive into `dvs128-gesture/`, keeping `DvsGesture/` and its trial lists, AEDAT recordings, and label CSV files |
 | `cifar-100_16` | Seven-block ResNet | [CIFAR-100](https://www.cs.toronto.edu/~kriz/cifar.html): extract `cifar-100-python.tar.gz` into `cifar-100/`, keeping the `cifar-100-python/` directory |
 | `cifar10-dvs` | Seven-block ResNet | [CIFAR10-DVS](https://figshare.com/articles/dataset/CIFAR10-DVS_New/4724671): extract all ten class archives into `cifar10-dvs/`, with one directory per class containing the original `.aedat` recordings |
 
@@ -105,25 +105,24 @@ To recalculate coefficients after data preparation:
 ./bash/calibrate_lambda.sh
 ```
 
-Copy the six values from `paper_artifacts/lambda_calibration.csv` into the `lambda` mapping in `config/paper/train_regularization_on.yaml` before regularized training. Calibration reads the saved training probe and writes one CSV. See [lambda calibration](docs/lambda_calibration.md).
-
-Select another regularized-training configuration with `./bash/paper_reg.sh --config PATH`. The launcher saves and uses a snapshot of that configuration for the entire run.
+Copy the six values from `paper_artifacts/lambda_calibration.csv` into `REGULARIZATION_LAMBDA` in [paper_defaults.py](src/workshop_jax/config/paper_defaults.py) before regularized training. Calibration reads the saved training probe and writes one CSV. Completed stages record their applied settings in stage manifests. See [lambda calibration](docs/lambda_calibration.md).
 
 #### Configuration
 
-All configuration files are under `config/paper/`. Dataset IDs match the table above.
+The only experiment input YAML is [run.yaml](config/paper/run.yaml), which sets the output `root` and random `seed`. All other experiment settings are hardcoded in [paper_defaults.py](src/workshop_jax/config/paper_defaults.py). Dataset IDs match the table above.
 
-| File | Settings and meaning |
+| Stage | Hardcoded settings and meaning |
 | --- | --- |
-| `run.yaml` | `root`: output directory; `seed`: random seed for the run |
-| `data_prep.yaml` | `train_probe_size`, `test_probe_size`: saved probe sample counts per dataset |
-| `dataset_signal_analysis.yaml` | `batch_size`: samples processed together when computing input spectra |
-| `train_regularization_off.yaml` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and `checkpoint_epochs` for spectral analysis |
-| `train_regularization_on.yaml` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and one positive `lambda` per dataset |
-| `signal_analysis_regularization_off.yaml` | `batch_size`: samples processed together during checkpoint analysis |
-| `lambda_calibration.yaml` | `artifact_root`: prepared run; `output_csv`: result path; `target_ratio`: weighted SMR/task gradient-norm ratio; `batch_size`: processing chunks; `gpu_ids`, `memory_fraction`, `compile_threads`: execution resources |
+| `data_prep` | `train_probe_size`, `test_probe_size`: saved probe sample counts per dataset |
+| `dataset_signal_analysis` | `batch_size`: samples processed together when computing input spectra |
+| `train_regularization_off` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and `checkpoint_epochs` for spectral analysis |
+| `train_regularization_on` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and one positive `lambda` per dataset from `REGULARIZATION_LAMBDA` |
+| `signal_analysis_regularization_off` | `batch_size`: samples processed together during checkpoint analysis |
+| `lambda_calibration` | `artifact_root`: prepared run; `output_csv`: result path; `target_ratio`: weighted SMR/task gradient-norm ratio; `batch_size`: processing chunks; `gpu_ids`, `memory_fraction`, `compile_threads`: execution resources |
 
-The supplied training settings use seed 0, 50 epochs, learning rate 0.0025, and checkpoints at epochs 1, 5, 10, and 50. Calibration processing batches match the training batch sizes. If the output root changes, update calibration's `artifact_root` and `output_csv` as well.
+The supplied training settings use seed 0, 50 epochs, learning rate 0.0025, and checkpoints at epochs 1, 5, 10, and 50. Calibration processing batches match the training batch sizes. If the output root changes, update `CALIBRATION_ARTIFACT_ROOT` and `CALIBRATION_OUTPUT_CSV` in `paper_defaults.py` as well; calibration's paths remain independent of `run.yaml`.
+
+`environment.yml` remains the Conda dependency specification used for installation. Generated run and stage manifests still use YAML; they record outputs rather than supply editable experiment settings.
 
 #### GPU selection
 
@@ -135,7 +134,7 @@ To use one GPU:
 WORKSHOP_ODI_GPU_IDS="0" ./bash/paper_reg.sh
 ```
 
-For calibration, select GPUs with `gpu_ids` in its YAML.
+For calibration, select GPUs in the hardcoded `lambda_calibration` settings in [paper_defaults.py](src/workshop_jax/config/paper_defaults.py).
 
 | Environment variable | Meaning |
 | --- | --- |

@@ -26,8 +26,8 @@ from workshop_jax.config import (
 PROJECT_ROOT = Path(__file__).resolve().parents[3]
 
 
-def load_calibration_config(path: Path) -> CalibrationConfig:
-    config = load_feature_config(path, "lambda_calibration")
+def load_calibration_config() -> CalibrationConfig:
+    config = load_feature_config("lambda_calibration")
     if not isinstance(config, CalibrationConfig):
         raise ConfigError("expected lambda_calibration configuration")
     return config
@@ -189,14 +189,9 @@ def main() -> None:
     parser = argparse.ArgumentParser(
         description="Calibrate one SMR lambda per dataset on its prepared train probe."
     )
-    parser.add_argument(
-        "--config",
-        type=Path,
-        default=PROJECT_ROOT / "config/paper/lambda_calibration.yaml",
-    )
     parser.add_argument("--dry-run", action="store_true")
     args = parser.parse_args()
-    config = load_calibration_config(args.config)
+    config = load_calibration_config()
     if args.dry_run:
         print(
             json.dumps(

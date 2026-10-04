@@ -7,22 +7,10 @@ from typing import Any, Mapping
 
 import yaml
 
-
-DATASETS = (
-    "s-mnist",
-    "shd",
-    "cifar-10_16",
-    "dvs128-gesture",
-    "cifar-100_16",
-    "cifar10-dvs",
-)
-FEATURES = (
-    "data_prep",
-    "dataset_signal_analysis",
-    "train_regularization_off",
-    "train_regularization_on",
-    "signal_analysis_regularization_off",
-    "lambda_calibration",
+from .paper_defaults import (
+    DATASETS,
+    FEATURES,
+    feature_payload,
 )
 
 
@@ -180,18 +168,11 @@ def load_run_config(path: Path, project_root: Path) -> RunConfig:
     return RunConfig(root=root, seed=seed)
 
 
-def load_feature_config(
-    path: Path, expected_feature: str | None = None
-) -> FeatureConfig:
-    document = _document(path)
-    if len(document) != 1:
-        raise ConfigError("a feature document must contain exactly one root")
-    feature = str(next(iter(document)))
+def load_feature_config(feature: str) -> FeatureConfig:
+    """Load fixed feature settings through the original validation rules."""
     if feature not in FEATURES:
         raise ConfigError(f"unsupported feature root: {feature}")
-    if expected_feature is not None and feature != expected_feature:
-        raise ConfigError(f"expected {expected_feature}, found {feature}")
-    payload = _mapping(document[feature], feature)
+    payload = feature_payload(feature)
     if feature == "lambda_calibration":
         _exact_keys(
             payload,
