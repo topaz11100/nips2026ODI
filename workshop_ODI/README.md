@@ -107,22 +107,6 @@ To recalculate coefficients after data preparation:
 
 Copy the six values from `paper_artifacts/lambda_calibration.csv` into `REGULARIZATION_LAMBDA` in [paper_defaults.py](src/workshop_jax/config/paper_defaults.py) before regularized training. Calibration reads the saved training probe and writes one CSV. Completed stages record their applied settings in stage manifests. See [lambda calibration](docs/lambda_calibration.md).
 
-#### Configuration
-
-The only experiment input YAML is [run.yaml](config/paper/run.yaml), which sets the output `root` and random `seed`. All other experiment settings are hardcoded in [paper_defaults.py](src/workshop_jax/config/paper_defaults.py). Dataset IDs match the table above.
-
-| Stage | Hardcoded settings and meaning |
-| --- | --- |
-| `data_prep` | `train_probe_size`, `test_probe_size`: saved probe sample counts per dataset |
-| `dataset_signal_analysis` | `batch_size`: samples processed together when computing input spectra |
-| `train_regularization_off` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and `checkpoint_epochs` for spectral analysis |
-| `train_regularization_on` | `epochs`, `learning_rate`, per-dataset training `batch_size`, and one positive `lambda` per dataset from `REGULARIZATION_LAMBDA` |
-| `signal_analysis_regularization_off` | `batch_size`: samples processed together during checkpoint analysis |
-| `lambda_calibration` | `artifact_root`: prepared run; `output_csv`: result path; `target_ratio`: weighted SMR/task gradient-norm ratio; `batch_size`: processing chunks; `gpu_ids`, `memory_fraction`, `compile_threads`: execution resources |
-
-The supplied training settings use seed 0, 50 epochs, learning rate 0.0025, and checkpoints at epochs 1, 5, 10, and 50. Calibration processing batches match the training batch sizes. If the output root changes, update `CALIBRATION_ARTIFACT_ROOT` and `CALIBRATION_OUTPUT_CSV` in `paper_defaults.py` as well; calibration's paths remain independent of `run.yaml`.
-
-`environment.yml` remains the Conda dependency specification used for installation. Generated run and stage manifests still use YAML; they record outputs rather than supply editable experiment settings.
 
 #### GPU selection
 
